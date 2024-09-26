@@ -9,18 +9,17 @@ mod elm_arch;
 fn main() -> Result<()> {
     log_init();
 
-    let args:Vec<String> = std::env::args().collect();
+    let args: Vec<String> = std::env::args().collect();
 
     let mut terminal = ratatui::init();
-    let result = match args[1].as_str() {
-        "elm" => {
-            elm_arch::App::new().run(&mut terminal)
-        },
-        _ => {
-            todo!("there is no default (yet)")
-        },
+    let selector = args
+        .get(1)
+        .ok_or(anyhow::anyhow!("must be an argumeng in command line"))
+        .expect("");
+    let result = match selector.as_str() {
+        "elm" => elm_arch::run(&mut terminal),
+        _ => Err(anyhow::anyhow!("unsupported command line argument")),
     };
-    //let result = App::new().run(&mut terminal);
 
     ratatui::restore();
     if let Err(ref e) = result {

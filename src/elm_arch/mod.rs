@@ -3,33 +3,51 @@ use anyhow::Result;
 #[allow(unused_imports)]
 use raalog::{debug, error, info, trace, warn};
 
+
+mod model;
+use model::AppModel as Model;
+mod update;
+use update::{update,Message};
+mod view;
+
+
 use ratatui::crossterm::event as xEvent;
 use ratatui::prelude::*;
-use ratatui::widgets::Widget;
-use ratatui::widgets::{Block, Paragraph, Wrap};
 
 //  //  //  //  //  //  //  //
-pub struct App {
-    status: String,
-    ed_state: edtui::EditorState,
-    ed_handler: edtui::EditorEventHandler,
-    exiting: bool,
+
+
+pub fn run(terminal: &mut ratatui::Terminal<impl Backend>) -> Result<()> {
+    trace!(" -> TElmA.run()");
+    let mut model = Model::new();
+
+    while !model.is_exiting() {
+        // draw
+        terminal.draw(|frame|{view::view(&model, frame)});
+
+        // input
+        let raw_inputs = collect_events()?;
+        for raw_input in raw_inputs {
+            let mut current_message = Some(Message::InputEvent(raw_input));
+            while current_message.is_some() {
+                current_message = update(&mut model, &current_message.unwrap())?;
+            }
+        }
+
+        //todo!("TElmA.run()");
+    }
+    Ok(())
 }
 
-impl App {
-    pub fn new() -> Self {
-        let new_app = App {
-            status: String::new(),
-            ed_state: edtui::EditorState::new(edtui::Lines::from("started text")),
-            ed_handler: edtui::EditorEventHandler::default(),
-            exiting: false,
-        };
-        trace!(" + App::new");
-        new_app
-    }
 
+
+
+
+//  //  //  //  //  //  //  //
+
+/*
+impl App {
     pub fn run(mut self, terminal: &mut ratatui::Terminal<impl Backend>) -> Result<()> {
-        trace!(" -> App.run()");
         loop {
             // draw
             terminal.draw(|frame| {
@@ -94,7 +112,9 @@ impl App {
         Ok(())
     }
 }
+*/
 //  //  //  //
+/*
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         // layout
@@ -126,7 +146,7 @@ impl Widget for &mut App {
             .render(status_area, buf);
     }
 }
-
+*/
 //  //  //  //  //  //  //  //
 static POLL_WAIT_TIME: std::time::Duration = std::time::Duration::from_millis(8); //from_secs(0);
 fn collect_events() -> Result<Vec<xEvent::Event>> {
