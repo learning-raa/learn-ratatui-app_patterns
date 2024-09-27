@@ -1,7 +1,7 @@
 # learn-ratatui-app_patterns
 study app.patterns with Ratatui
 
-- [ ] TElmA
+- [x] TElmA
 - [ ] Component
 - [ ] Flux
 
