@@ -3,107 +3,84 @@ use anyhow::Result;
 #[allow(unused_imports)]
 use raalog::{debug, error, info, trace, warn};
 
-
 mod model;
 use model::AppModel as Model;
 mod update;
-use update::{update,Message};
+use update::{update, Message};
 mod view;
-
 
 use ratatui::crossterm::event as xEvent;
 use ratatui::prelude::*;
 
 //  //  //  //  //  //  //  //
 
-
 pub fn run(terminal: &mut ratatui::Terminal<impl Backend>) -> Result<()> {
     trace!(" -> TElmA.run()");
     let mut model = Model::new();
 
     while !model.is_exiting() {
-        // draw
-        terminal.draw(|frame|{view::view(&model, frame)});
+        // DRAW
+        terminal.draw(|frame| view::view(&mut model, frame));
 
-        // input
+        // UPDATE
+        //      get inputs
         let raw_inputs = collect_events()?;
+        check_terminate_sequence(&raw_inputs)?;
+        //      updating loop
         for raw_input in raw_inputs {
             let mut current_message = Some(Message::InputEvent(raw_input));
             while current_message.is_some() {
                 current_message = update(&mut model, &current_message.unwrap())?;
             }
         }
+    }
+    trace!("normal exit");
+    Ok(())
+}
 
-        //todo!("TElmA.run()");
+//  //  //  //  //  //  //  //
+fn check_terminate_sequence(events: &Vec<xEvent::Event>) -> Result<()> {
+    for event in events {
+        match event {
+            xEvent::Event::Key(key) => {
+                if key.modifiers.contains(xEvent::KeyModifiers::CONTROL) {
+                    // <C-c>
+                    if key.code == xEvent::KeyCode::Char('c') {
+                        let msg = "exiting by <C-c>";
+                        warn!("{}", msg);
+                        return Err(anyhow::anyhow!(msg));
+                    }
+                    // <C-e>
+                    if key.code == xEvent::KeyCode::Char('x') {
+                        let msg = "exiting with TEST error by <C-x>";
+                        error!("{}", msg);
+                        return Err(anyhow::anyhow!(msg));
+                    }
+                    // <C-p>
+                    if key.code == xEvent::KeyCode::Char('p') {
+                        panic!("TEST panic by <C-p>");
+                    }
+                }
+            }
+            _ => {}
+        }
     }
     Ok(())
 }
 
-
-
-
-
 //  //  //  //  //  //  //  //
+static POLL_WAIT_TIME: std::time::Duration = std::time::Duration::from_millis(8); //from_secs(0);
+fn collect_events() -> Result<Vec<xEvent::Event>> {
+    let mut result = Vec::new();
+    while xEvent::poll(POLL_WAIT_TIME)? {
+        result.push(xEvent::read()?);
+    }
+    Ok(result)
+}
+
+
 
 /*
-impl App {
-    pub fn run(mut self, terminal: &mut ratatui::Terminal<impl Backend>) -> Result<()> {
-        loop {
-            // draw
-            terminal.draw(|frame| {
-                frame.render_widget(&mut self, frame.area());
-            })?;
-
-            // input
-            let events = collect_events()?;
-            if events.len() > 0 {
-                self.app_input_handler(&events)?;
-                self.other_input_handlers(&events)?;
-            }
-            if self.exiting {
-                return Ok(());
-            }
-        }
-    }
-
-    fn app_input_handler(&mut self, events: &Vec<xEvent::Event>) -> Result<()> {
-        for event in events {
-            match event {
-                xEvent::Event::Key(key) => {
-                    if key.modifiers.contains(xEvent::KeyModifiers::CONTROL) {
-                        // <C-c>
-                        if key.code == xEvent::KeyCode::Char('c') {
-                            self.exiting = true;
-                            warn!("exiting by <C-c>");
-                            return Ok(());
-                        }
-                        // <C-e>
-                        if key.code == xEvent::KeyCode::Char('e') {
-                            self.exiting = true;
-                            error!("exiting with error by <C-e>");
-                            return Ok(());
-                        }
-                        // <C-p>
-                        if key.code == xEvent::KeyCode::Char('p') {
-                            self.exiting = true;
-                            panic!("panic by <C-p>");
-                        }
-                    } else {
-                        // q
-                        if let edtui::EditorMode::Normal = self.ed_state.mode {
-                            if key.code == xEvent::KeyCode::Char('q') {
-                                self.exiting = true;
-                                info!("exiting by <q>");
-                                return Ok(());
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-        Ok(())
-    }
 
     fn other_input_handlers(&mut self, events: &Vec<xEvent::Event>) -> Result<()> {
         for event in events {
@@ -147,12 +124,3 @@ impl Widget for &mut App {
     }
 }
 */
-//  //  //  //  //  //  //  //
-static POLL_WAIT_TIME: std::time::Duration = std::time::Duration::from_millis(8); //from_secs(0);
-fn collect_events() -> Result<Vec<xEvent::Event>> {
-    let mut result = Vec::new();
-    while xEvent::poll(POLL_WAIT_TIME)? {
-        result.push(xEvent::read()?);
-    }
-    Ok(result)
-}

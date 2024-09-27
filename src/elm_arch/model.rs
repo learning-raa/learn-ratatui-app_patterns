@@ -3,9 +3,16 @@ use raalog::{debug, error, info, trace, warn};
 
 //  //  //  //  //  //  //  //
 pub struct AppModel {
-    ed_state: edtui::EditorState,
-    ed_handler: edtui::EditorEventHandler,
-    pub(super) exiting: bool,
+    pub(in super) ed_state: edtui::EditorState,
+    pub(in super) ed_handler: edtui::EditorEventHandler,
+    pub(in super) state: AppModelState,
+}
+
+#[derive(PartialEq)]
+pub enum AppModelState {
+    EditorFocused,
+    OffFocused,
+    Exiting,
 }
 
 impl AppModel {
@@ -13,7 +20,7 @@ impl AppModel {
         let new_model = Self {
             ed_state: edtui::EditorState::new(edtui::Lines::from("started text.\n\nline 3\nFIN")),
             ed_handler: edtui::EditorEventHandler::default(),
-            exiting: false,
+            state: AppModelState::OffFocused,
         };
 
         trace!(" + AppModel::new()");
@@ -21,6 +28,6 @@ impl AppModel {
     }
 
     pub fn is_exiting(&self) -> bool {
-        self.exiting
+        self.state == AppModelState::Exiting
     }
 }
