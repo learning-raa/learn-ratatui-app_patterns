@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.88"
-ratatui = "0.28.1"
-edtui = "0.7.2"
+anyhow = "1.0.96"
+edtui = "0.9.6"
 
 raalog = { git = "https://github.com/AlexanderARodin/raalog.git", branch = "main" }
+ratatui = "0.29.0"

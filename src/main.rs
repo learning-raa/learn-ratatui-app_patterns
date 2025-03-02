@@ -34,7 +34,7 @@ fn main() -> Result<()> {
 fn log_init() {
     raalog::init()
         .expect("unable init log system")
-        .set_file_mode("/tmp/rust_debug.log")
+        .set_file_mode(&"/tmp/rust_debug.log")
         .expect("unable to set file mode of logger")
         .set_level(raalog::LevelFilter::Trace);
 
